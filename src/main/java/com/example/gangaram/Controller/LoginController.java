@@ -23,7 +23,7 @@ public class LoginController {
     }
 
     @GetMapping("/getStockPrice")
-    public String getStockPrice(@RequestParam String instrumentKey, @RequestParam String accessToken) throws IOException, InterruptedException {
-        return arbitragService.getRealTimeStockPrice(instrumentKey, accessToken);
+    public String getStockPrice(@RequestParam String BSCCompanyName,@RequestParam String NSCCompanyName, @RequestParam String accessToken) throws IOException, InterruptedException {
+        return arbitragService.getRealTimeStockPrice(BSCCompanyName,NSCCompanyName, accessToken);
     }
 }

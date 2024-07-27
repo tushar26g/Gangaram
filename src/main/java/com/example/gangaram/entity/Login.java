@@ -2,6 +2,8 @@ package com.example.gangaram.entity;
 
 import java.util.List;
 
+import org.springframework.data.mongodb.core.mapping.Document;
+
 public class Login {
     private String email;
     private List<String> exchanges;
