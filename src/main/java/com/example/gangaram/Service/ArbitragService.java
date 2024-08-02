@@ -1,31 +1,26 @@
 package com.example.gangaram.Service;
 
-import com.example.gangaram.entity.BSC;
 import com.example.gangaram.entity.Login;
-import com.example.gangaram.entity.NSC;
 import com.example.gangaram.repository.BSCRepo;
 import com.example.gangaram.repository.NSCRepo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ArbitragService {
@@ -103,18 +98,17 @@ public class ArbitragService {
 
     public String getRealTimeStockPrice(String BSCCompanyName,String NSCCompanyName, String accessToken) throws IOException, InterruptedException {
 
-//        List<BSC> bsc= BSCRepo.findInstrumentKeysByName(BSCCompanyName);
-//        List<NSC> nsc= nscRepo.findInstrumentKeysByName(NSCCompanyName);
-//        if(bsc.size()==0)
-//            return "Why";
-//        String bscInstrumentKey = bsc.get(0).getInstrument_Key();
-//        String nscInstrumentKey = nsc.get(0).getInstrument_Key();
+        String NSEFILE_PATH = "D:\\t\\books\\website\\Data\\NSE.csv";
+        String BSEFILE_PATH = "D:\\t\\books\\website\\Data\\BSE.csv";
 
-        String bscEncodedKey = URLEncoder.encode("BSE_EQ|INE002A01018", StandardCharsets.UTF_8);
-        String nscEncodedKey = URLEncoder.encode("NSE_EQ|INE002A01018", StandardCharsets.UTF_8);
+        String nscInstrumentKey=getInstrumentKeyByName(NSEFILE_PATH,NSCCompanyName);
+        String bscInstrumentKey=getInstrumentKeyByName(BSEFILE_PATH,BSCCompanyName);
 
-        String bscURL = "https://api.upstox.com/v2/market-quote/ltp?instrument_key=" + bscEncodedKey;
+        String nscEncodedKey = URLEncoder.encode(nscInstrumentKey, StandardCharsets.UTF_8);
+        String bscEncodedKey = URLEncoder.encode(bscInstrumentKey, StandardCharsets.UTF_8);
+
         String nscURL = "https://api.upstox.com/v2/market-quote/ltp?instrument_key=" + nscEncodedKey;
+        String bscURL = "https://api.upstox.com/v2/market-quote/ltp?instrument_key=" + bscEncodedKey;
         String acceptHeader = "application/json";
         String authorizationHeader = "Bearer "+ accessToken;
 
@@ -137,8 +131,6 @@ public class ArbitragService {
             HttpResponse<String> nscResponse = nschttpClient.send(nschttpRequest, HttpResponse.BodyHandlers.ofString());
 
 
-//            int statusCode = nscResponse.statusCode();
-//            HttpHeaders headers = nscResponse.headers();
             String nscResponseBody = nscResponse.body();
 
             String bscResponseBody = bscResponse.body();
@@ -158,6 +150,8 @@ public class ArbitragService {
 
             System.out.println("BSC =" + " " + bscPrice + " " + "NSC =" + " " + nscPrice + " " + "Differnce=" + " " + Math.abs(nscPrice - bscPrice));
         }
+
+
         return "Done";
     }
 
@@ -180,6 +174,27 @@ public class ArbitragService {
         }
 
         return lastPriceNode.asDouble();
+    }
+
+
+
+
+    public String getInstrumentKeyByName(String filePath, String nameToFind) {
+        try (Reader reader = new FileReader(filePath);
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader())) {
+
+            for (CSVRecord csvRecord : csvParser) {
+                String name = csvRecord.get("name"); // Assuming 'name' is the header for the column
+                String instrumentKey = csvRecord.get("instrument_key"); // Assuming 'instrument_key' is the header for the column
+
+                if (name.equalsIgnoreCase(nameToFind)) {
+                    return instrumentKey;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null; // Return null if the name is not found
     }
 }
 
